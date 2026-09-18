@@ -6,6 +6,97 @@ Publish posts, read and edit your profile, search jobs, and apply via Easy Apply
 
 > ⚠️ **Disclaimer:** This project automates your real LinkedIn account in a browser. LinkedIn's User Agreement (§8.2) prohibits bots, scraping, and automation. Use at your own risk; aggressive or mass automation can lead to account restriction. All browser actions run locally on your machine.
 
+## Quick Start (first-timers)
+
+The 5-minute path from nothing to your first LinkedIn post via AI. Requires only [uv](https://docs.astral.sh/uv/), a terminal, and a LinkedIn account.
+
+**1. Install uv** (skip if you already have it)
+
+```bash
+# Windows (PowerShell)
+irm https://astral.sh/uv/install.ps1 | iex
+
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**2. Clone and install**
+
+```bash
+git clone https://github.com/developer-tusharchauhan/linkedin-mcp.git
+cd linkedin-mcp
+
+uv sync
+uv run patchright install chromium
+```
+
+**3. Register with your MCP client** — put your absolute path to `linkedin-mcp` in place of `YOUR_PATH`:
+
+<details>
+<summary>opencode — add to <code>opencode.json</code></summary>
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "linkedin": {
+      "type": "local",
+      "command": ["uv", "--directory", "YOUR_PATH/linkedin-mcp", "run", "python", "-m", "linkedin_mcp.server"],
+      "enabled": true
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary>Claude Desktop / Cursor / Claude Code — add to your MCP config</summary>
+
+```json
+{
+  "mcpServers": {
+    "linkedin": {
+      "command": "uv",
+      "args": ["--directory", "YOUR_PATH/linkedin-mcp", "run", "python", "-m", "linkedin_mcp.server"]
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary>VS Code — add to <code>.vscode/mcp.json</code></summary>
+
+```json
+{
+  "servers": {
+    "linkedin": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["--directory", "YOUR_PATH/linkedin-mcp", "run", "python", "-m", "linkedin_mcp.server"]
+    }
+  }
+}
+```
+</details>
+
+> On Windows, wrap the command in `cmd /c` if your client does not resolve `uv` directly.
+
+**4. Restart your MCP client**, then in the chat:
+
+```
+Run the login tool.
+```
+
+A Chromium window opens — sign in to LinkedIn there (complete 2FA/captcha if asked). After that, session is saved and you can say things like:
+
+- "Read my LinkedIn profile"
+- "Publish this post on LinkedIn: I just shipped my first MCP server!"
+- "Search for Data Engineer jobs posted this week, remote"
+- "Check this job and dry-run the Easy Apply form: <job URL>"
+
+> Seeing `Failed to spawn` on a Windows machine? Your security policy blocks uv's script shims — the `python -m` commands above already work around it. Just restart the client.
+
 ## Features
 
 - **Posting** — publish posts to your LinkedIn feed
