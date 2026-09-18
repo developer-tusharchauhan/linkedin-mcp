@@ -189,6 +189,25 @@ For opencode:
 
 > **Windows / corporate machines:** some security policies (App Control / AppLocker) block generated `.exe` shims (like `linkedin-mcp`). If you see `Failed to spawn`, switch to the `python -m` form — a venv pip install makes `python -m linkedin_mcp.server` work from any directory — and restart your MCP client.
 
+## Releasing a new version
+
+The repo includes a GitHub Actions workflow (`.github/workflows/release.yml`) that builds and publishes to PyPI automatically when a `v*` tag is pushed.
+
+1. Create a PyPI account and your project (`linkedin-mcp-automation`).
+2. On the PyPI project page → *Publishing* → add a **Trusted Publisher**:
+   - GitHub owner: `developer-tusharchauhan`
+   - Repository: `linkedin-mcp`
+   - Workflow name: `release.yml`
+   - Environment: `release`
+3. Tag and push — the workflow builds and publishes for you:
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+   (Trigger it manually anytime via **Actions → Release to PyPI → Run workflow**.)
+
+Manual alternative (one-off): run `uv publish` locally with `UV_PUBLISH_TOKEN` set to a PyPI API token.
+
 ## Example usage
 
 Once connected, just ask your assistant:
