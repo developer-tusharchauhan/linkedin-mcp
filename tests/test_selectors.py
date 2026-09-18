@@ -107,3 +107,23 @@ def test_profile_name_headline_about_content(load):
         if (p.inner_text() or "").strip()
     ]
     assert about_texts and about_texts[0].startswith("Senior Software Engineer")
+
+
+def test_jobs_results_selectors(load):
+    """Selectors used by search_jobs on the current jobs search page."""
+    page = load("jobs.html")
+    rows = page.locator(
+        "li[data-occludable-job-id], .jobs-search-results__list-item, "
+        "ul.jobs-search__results-list li"
+    )
+    assert rows.count() >= 1
+    first = rows.first
+    assert first.locator('a[href*="/jobs/view/"]').count() >= 1
+    assert first.locator(
+        ".artdeco-entity-lockup__title, .job-card-list__title, "
+        ".job-card-container__link"
+    ).count() >= 1
+    assert first.locator(
+        ".artdeco-entity-lockup__subtitle, "
+        ".job-card-container__primary-description, .job-card-list__company-name"
+    ).count() >= 1

@@ -552,29 +552,42 @@ def search_jobs(
         params["f_WT"] = WORK_TYPE_CODES[work_setting]
     url = "https://www.linkedin.com/jobs/search/?" + urllib.parse.urlencode(params)
     page.goto(url, wait_until="domcontentloaded")
+    result_row = (
+        "li[data-occludable-job-id], .jobs-search-results__list-item, "
+        "ul.jobs-search__results-list li"
+    )
     try:
-        page.wait_for_selector(
-            ".jobs-search-results__list-item, ul.jobs-search__results-list li", timeout=15000
-        )
+        page.wait_for_selector(result_row, timeout=15000)
     except Exception:
         raise BrowserError("No job results found on the search page.")
     results: list[dict] = []
-    items = page.locator(".jobs-search-results__list-item, ul.jobs-search__results-list li")
+    items = page.locator(result_row)
     for i in range(min(items.count(), limit)):
         item = items.nth(i)
-        title_sel = item.locator(
-            ".job-card-list__title, .job-card-container__link, .job-card-list__title--link"
-        ).first
+        title_sel = item.locator("a[href*='/jobs/view/']").first
+        if title_sel.count() == 0:
+            title_sel = item.locator(
+                ".artdeco-entity-lockup__title, .job-card-list__title, "
+                ".job-card-container__link"
+            ).first
         title = (title_sel.inner_text() or "").strip() if title_sel.count() else ""
         href = ""
         if title_sel.count():
             href = title_sel.get_attribute("href") or ""
+            if href.startswith("/"):
+                href = "https://www.linkedin.com" + href
         company = first_text(
             item,
+            ".artdeco-entity-lockup__subtitle",
             ".job-card-container__primary-description",
             ".job-card-list__company-name",
         )
-        location_text = first_text(item, ".job-card-container__metadata-item", ".job-card-container__metadata-wrapper")
+        location_text = first_text(
+            item,
+            ".artdeco-entity-lockup__caption",
+            ".job-card-container__metadata-item",
+            ".job-card-container__metadata-wrapper",
+        )
         item_id = item.get_attribute("data-occludable-job-id") or ""
         job_id = item_id
         if not job_id:
