@@ -71,7 +71,7 @@ A Chromium window opens — sign in to LinkedIn there (complete 2FA/captcha if a
 
 ## Features
 
-- **Posting** — publish posts to your LinkedIn feed
+- **Posting** — publish posts to your LinkedIn feed, edit or delete existing posts
 - **Profile** — read your full profile, edit headline / About, add experience & education entries
 - **Jobs** — search jobs with keyword, location, date, and type filters; fetch full job details
 - **Easy Apply** — dry-run form inspection first, consent-gated submission
@@ -84,6 +84,8 @@ A Chromium window opens — sign in to LinkedIn there (complete 2FA/captcha if a
 | `login` | Open a headed browser window to sign in to LinkedIn and save the session |
 | `check_session` | Check whether the persisted session is still valid |
 | `create_post` | Publish a post to your feed |
+| `edit_post` | Replace the text of one of your existing posts (matched by text) |
+| `delete_post` | Delete one of your posts (matched by text; requires confirm) |
 | `get_my_profile` | Read name, headline, about, experience, education, skills |
 | `update_headline` | Replace your profile headline |
 | `update_about` | Replace your About / Summary section |

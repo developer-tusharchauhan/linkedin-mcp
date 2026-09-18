@@ -51,6 +51,39 @@ def create_post(text: str) -> dict:
 
 
 @mcp.tool()
+def delete_post(text_match: str, confirm: bool = False) -> dict:
+    """Delete a LinkedIn post whose text contains the given substring.
+
+    Args:
+        text_match: Substring that uniquely identifies the post (matched
+            case-insensitively against the post text).
+        confirm: Must be True to actually delete. When False, returns a
+            preview of the matched post without deleting it.
+    """
+    try:
+        with BrowserSession() as session:
+            return li.delete_post(session, text_match, confirm=confirm)
+    except BrowserError as e:
+        return {"status": "error", "message": str(e)}
+
+
+@mcp.tool()
+def edit_post(text_match: str, new_text: str) -> dict:
+    """Replace the text of a LinkedIn post whose text contains the given substring.
+
+    Args:
+        text_match: Substring that uniquely identifies the post (matched
+            case-insensitively against the post text).
+        new_text: The new full text for the post.
+    """
+    try:
+        with BrowserSession() as session:
+            return li.edit_post(session, text_match, new_text)
+    except BrowserError as e:
+        return {"status": "error", "message": str(e)}
+
+
+@mcp.tool()
 def get_my_profile() -> dict:
     """Return the authenticated user's full profile: name, headline, about, experience, education, skills."""
     try:

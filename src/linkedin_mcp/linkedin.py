@@ -48,7 +48,10 @@ def is_logged_in(page: Page) -> bool:
     if "authwall" in page.url or "/login" in page.url:
         return False
     try:
-        page.wait_for_selector('[data-control-name="identity_welcome_message"], .global-nav, a.global-nav__primary-link', timeout=8000)
+        page.wait_for_selector(
+            '[data-testid="primary-nav"], a[href*="/mynetwork"], a[href*="/jobs/"]',
+            timeout=8000,
+        )
         return True
     except Exception:
         return False
@@ -96,8 +99,9 @@ def check_session(session: BrowserSession) -> dict:
 def create_post(session: BrowserSession, text: str) -> dict:
     page = session.page
     ensure_logged_in(page)
-    page.goto("https://www.linkedin.com/feed/", wait_until="domcontentloaded")
+    page.goto("https://www.linkedin.com/feed/", wait_until="load")
     trigger = page.locator(
+        'a[href*="sharebox"], a[aria-label="Start a post"], '
         'button[aria-label*="Start a post"], .share-box-feed-entry__trigger'
     ).first
     if trigger.count() == 0:
@@ -110,25 +114,142 @@ def create_post(session: BrowserSession, text: str) -> dict:
     editor.click()
     page.keyboard.insert_text(text)
     page.wait_for_timeout(500)
-    post_btn = page.locator(
-        '.share-actions__primary-action, button[aria-label*="Post now"], button.share-box-feed-entry__trigger'
-    ).all()
-    btn = None
-    for el in post_btn:
-        el_text = (el.inner_text() or "").strip().lower()
-        if el_text == "post" or "post now" in el_text:
-            btn = el
-            break
-    if btn is None:
-        btn = page.locator("button.share-actions__primary-action").first
-    if btn.count() == 0 or not btn.is_enabled():
+    post_btn = page.get_by_role("button", name="Post", exact=True)
+    if post_btn.count() == 0 or not post_btn.is_enabled():
         raise BrowserError("Post button not found or disabled.")
-    btn.click()
+    post_btn.click()
     try:
-        page.wait_for_selector(".share-box-feed-entry__trigger", timeout=15000)
+        page.wait_for_selector(".ql-editor", state="detached", timeout=15000)
     except Exception:
         pass
     return {"status": "posted", "preview": text[:300]}
+
+
+def _open_recent_activity(page: Page) -> None:
+    page.goto(
+        "https://www.linkedin.com/in/me/recent-activity/all/", wait_until="load"
+    )
+    page.wait_for_timeout(4000)
+
+
+def _find_post_card(page: Page, text_match: str):
+    articles = page.locator(
+        "article.feed-shared-update-v2, div[data-urn*='activity'], .occludable-update"
+    )
+    for i in range(articles.count()):
+        try:
+            text = articles.nth(i).inner_text() or ""
+        except Exception:
+            text = ""
+        if text_match.lower() in text.lower():
+            return articles.nth(i)
+    return None
+
+
+def _open_post_menu(page: Page, card) -> None:
+    menu = card.locator('button[aria-label*="control menu for post"]').first
+    if menu.count() == 0:
+        raise BrowserError("Could not find the control menu for the post.")
+    menu.scroll_into_view_if_needed()
+    menu.click()
+    page.wait_for_timeout(3000)
+
+
+def _click_menu_item(page: Page, css: str) -> None:
+    item = page.locator(css).first
+    try:
+        item.wait_for(state="attached", timeout=10000)
+        item.click()
+    except Exception:
+        raise BrowserError("Could not find the requested control-menu item.")
+    page.wait_for_timeout(2500)
+
+
+def delete_post(session: BrowserSession, text_match: str, confirm: bool = False) -> dict:
+    """Delete a LinkedIn post whose text contains `text_match`.
+
+    With `confirm=False` (default) it only locates the post and returns a
+    preview; pass `confirm=True` to actually delete it.
+    """
+    page = session.page
+    ensure_logged_in(page)
+    _open_recent_activity(page)
+    card = _find_post_card(page, text_match)
+    if card is None:
+        raise BrowserError(f"No post found containing {text_match!r}.")
+    preview = (card.inner_text() or "").strip()[:300]
+    if not confirm:
+        return {
+            "status": "ready_to_delete",
+            "post_preview": preview,
+            "message": "Post matched but not deleted. Re-run with confirm=true to delete it.",
+        }
+    _open_post_menu(page, card)
+    _click_menu_item(
+        page,
+        "li.option-delete div[role='button'], "
+        "li.feed-shared-control-menu__item.option-delete",
+    )
+    dialog = page.locator(".feed-components-shared-decision-modal").last
+    try:
+        dialog.wait_for(state="visible", timeout=10000)
+    except Exception:
+        raise BrowserError("Could not find the delete confirmation dialog.")
+    delete_btn = dialog.get_by_role("button", name="Delete", exact=True)
+    if delete_btn.count() == 0:
+        raise BrowserError("Could not find the 'Delete' confirmation button.")
+    delete_btn.click()
+    try:
+        page.wait_for_selector(
+            ".feed-components-shared-decision-modal", state="detached", timeout=15000
+        )
+    except Exception:
+        pass
+    return {"status": "deleted", "post_preview": preview}
+
+
+def edit_post(session: BrowserSession, text_match: str, new_text: str) -> dict:
+    """Replace the text of a LinkedIn post whose text contains `text_match`."""
+    page = session.page
+    ensure_logged_in(page)
+    _open_recent_activity(page)
+    card = _find_post_card(page, text_match)
+    if card is None:
+        raise BrowserError(f"No post found containing {text_match!r}.")
+    old_preview = (card.inner_text() or "").strip()[:300]
+    _open_post_menu(page, card)
+    _click_menu_item(
+        page,
+        "li.option-edit-share div[role='button'], "
+        "li.feed-shared-control-menu__item.option-edit-share",
+    )
+    editor = page.locator(
+        ".share-box-v2__modal .ql-editor[contenteditable='true'], "
+        ".share-box-v2__modal [contenteditable='true']"
+    ).first
+    try:
+        editor.wait_for(state="visible", timeout=10000)
+    except Exception:
+        raise BrowserError("Could not find the post editor.")
+    editor.click()
+    page.keyboard.press("Control+A")
+    page.keyboard.press("Backspace")
+    page.wait_for_timeout(300)
+    page.keyboard.insert_text(new_text)
+    page.wait_for_timeout(400)
+    save_btn = page.get_by_role("button", name="Save", exact=True)
+    if save_btn.count() == 0 or not save_btn.is_enabled():
+        raise BrowserError("Save button not found or disabled.")
+    save_btn.click()
+    try:
+        page.wait_for_selector(".share-box-v2__modal", state="detached", timeout=15000)
+    except Exception:
+        pass
+    return {
+        "status": "edited",
+        "old_preview": old_preview,
+        "new_preview": new_text[:300],
+    }
 
 
 def get_my_profile(session: BrowserSession) -> dict:
