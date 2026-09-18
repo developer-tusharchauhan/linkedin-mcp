@@ -1,6 +1,6 @@
 [project]
 name = "linkedin-mcp-automation"
-version = "0.1.1"
+version = "0.1.0b2"
 description = "MCP server for LinkedIn: publish posts, edit your profile, search jobs, and apply via Easy Apply using your own logged-in browser session"
 readme = "README.md"
 requires-python = ">=3.12"
