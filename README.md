@@ -38,7 +38,7 @@ Publish posts, read and edit your profile, search jobs, and apply via Easy Apply
 ## Installation
 
 ```bash
-git clone https://github.com/Tushar2014/linkedin-mcp.git
+git clone https://github.com/developer-tusharchauhan/linkedin-mcp.git
 cd linkedin-mcp
 
 uv sync
