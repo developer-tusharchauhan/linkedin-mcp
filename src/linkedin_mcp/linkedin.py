@@ -252,39 +252,60 @@ def edit_post(session: BrowserSession, text_match: str, new_text: str) -> dict:
     }
 
 
+def _gather_text(page: Page, selectors: str) -> list[str]:
+    out = []
+    for item in page.locator(selectors).all():
+        text = (item.inner_text() or "").strip()
+        if text:
+            out.append(text)
+    return out
+
+
+def _section_paragraphs(loc) -> list[str]:
+    return [
+        (p.inner_text() or "").strip()
+        for p in loc.locator("p").all()
+        if (p.inner_text() or "").strip()
+    ]
+
+
+_PRONOUNS = {"He/Him", "She/Her", "They/Them"}
+
+
 def get_my_profile(session: BrowserSession) -> dict:
     page = session.page
     ensure_logged_in(page)
     page.goto("https://www.linkedin.com/in/me/", wait_until="domcontentloaded")
     page.wait_for_timeout(2500)
-    name = first_text(
+    topcard = page.locator('[id$="QsTopcard"]').first
+    name = ""
+    headline = ""
+    if topcard.count():
+        name = first_text(topcard, "h2")
+        for text in _section_paragraphs(topcard):
+            if text in _PRONOUNS:
+                continue
+            headline = text
+            break
+    about = ""
+    about_sec = page.locator('[id$="QsAbout"]').first
+    if about_sec.count():
+        about = "\n".join(_section_paragraphs(about_sec))
+    experience = _gather_text(
         page,
-        "h1",
-        ".top-card-layout__title span",
-        ".pv-text-details__left-panel h1",
+        "[id$='QsExperience'] li, [id='experience'] li, "
+        "section#experience li, li[data-section-name='experience']",
     )
-    headline = first_text(
+    education = _gather_text(
         page,
-        ".top-card-layout__second-subline .text-body-medium",
-        ".pv-text-details__right-panel .text-body-medium",
-        "h2",
+        "[id$='QsEducation'] li, [id='education'] li, "
+        "section#education li, li[data-section-name='education']",
     )
-    about = first_text(page, "#about .visually-hidden + div", "#about .pv-shared-text-with-see-more", "#about")
-    experience = []
-    for item in page.locator("#experience ~ * li, section#experience li, li[data-section-name='experience']").all():
-        text = (item.inner_text() or "").strip()
-        if text:
-            experience.append(text)
-    education = []
-    for item in page.locator("section#education li, li[data-section-name='education']").all():
-        text = (item.inner_text() or "").strip()
-        if text:
-            education.append(text)
-    skills = []
-    for item in page.locator("section#skills .pvs-entity, #skills + * .pvs-entity").all():
-        text = (item.inner_text() or "").strip().split("\n")[0]
-        if text and text not in skills:
-            skills.append(text)
+    skills = _gather_text(
+        page,
+        "[id$='QsSkills'] li, [id='skills'] li, section#skills .pvs-entity, "
+        "#skills + * .pvs-entity",
+    )
     return {
         "name": name,
         "headline": headline,
