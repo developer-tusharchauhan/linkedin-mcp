@@ -1,13 +1,33 @@
 [project]
-name = "linkedin-mcp"
+name = "linkedin-mcp-automation"
 version = "0.1.0"
-description = "Custom LinkedIn MCP server: post, edit profile, search jobs, Easy Apply"
+description = "MCP server for LinkedIn: publish posts, edit your profile, search jobs, and apply via Easy Apply using your own logged-in browser session"
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Tushar Chauhan", email = "Tushar2014@users.noreply.github.com" }]
+keywords = ["mcp", "linkedin", "model-context-protocol", "automation", "patchright", "playwright", "jobs"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+]
 dependencies = [
     "mcp>=1.2.0",
     "patchright>=1.49.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/developer-tusharchauhan/linkedin-mcp"
+Repository = "https://github.com/developer-tusharchauhan/linkedin-mcp"
+Issues = "https://github.com/developer-tusharchauhan/linkedin-mcp/issues"
+Documentation = "https://github.com/developer-tusharchauhan/linkedin-mcp/blob/main/README.md"
 
 [project.scripts]
 linkedin-mcp = "linkedin_mcp.server:main"

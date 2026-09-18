@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from mcp.server.mcpserver import MCPServer
 
 from linkedin_mcp.browser import BrowserError, BrowserSession
@@ -222,7 +224,17 @@ def easy_apply(url: str, dry_run: bool = True, confirm: bool = False) -> dict:
         return {"status": "error", "message": str(e)}
 
 
+def _install_browsers() -> None:
+    sys.argv = ["patchright", "install", "chromium"]
+    from patchright.__main__ import main as patchright_main
+
+    patchright_main()
+
+
 def main() -> None:
+    if "--install-browsers" in sys.argv:
+        _install_browsers()
+        return
     mcp.run(transport="stdio")
 
 

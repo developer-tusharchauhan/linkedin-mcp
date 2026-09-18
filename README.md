@@ -20,37 +20,25 @@ irm https://astral.sh/uv/install.ps1 | iex
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-**2. Clone and install**
+**2. Install the package and its browser**
 
 ```bash
-git clone https://github.com/developer-tusharchauhan/linkedin-mcp.git
-cd linkedin-mcp
-
-uv sync
-uv run patchright install chromium
+uv tool install linkedin-mcp-automation
+linkedin-mcp --install-browsers
 ```
 
-**3. Register with your MCP client** — put your absolute path to `linkedin-mcp` in place of `YOUR_PATH`:
+> Alternatively install from source with `git clone https://github.com/developer-tusharchauhan/linkedin-mcp.git`, `uv sync` inside the folder, and run via `python -m linkedin_mcp.server` instead of the `linkedin-mcp` command.
+
+**3. Register with your MCP client**
+
+| Client | How |
+|--------|-----|
+| **opencode** | Add to `opencode.json`: `{"mcp": {"linkedin": {"type": "local", "command": ["linkedin-mcp"], "enabled": true}}}` |
+| **Claude Desktop / Claude Code / Cursor** | Add to your MCP config: `{"mcpServers": {"linkedin": {"command": "linkedin-mcp"}}}` |
+| **VS Code** | Add to `.vscode/mcp.json` a server entry with `"command": "linkedin-mcp"` |
 
 <details>
-<summary>opencode — add to <code>opencode.json</code></summary>
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "linkedin": {
-      "type": "local",
-      "command": ["uv", "--directory", "YOUR_PATH/linkedin-mcp", "run", "python", "-m", "linkedin_mcp.server"],
-      "enabled": true
-    }
-  }
-}
-```
-</details>
-
-<details>
-<summary>Claude Desktop / Cursor / Claude Code — add to your MCP config</summary>
+<summary>Source install instead? Use these config blocks (replace YOUR_PATH/linkedin-mcp)</summary>
 
 ```json
 {
@@ -64,23 +52,7 @@ uv run patchright install chromium
 ```
 </details>
 
-<details>
-<summary>VS Code — add to <code>.vscode/mcp.json</code></summary>
-
-```json
-{
-  "servers": {
-    "linkedin": {
-      "type": "stdio",
-      "command": "uv",
-      "args": ["--directory", "YOUR_PATH/linkedin-mcp", "run", "python", "-m", "linkedin_mcp.server"]
-    }
-  }
-}
-```
-</details>
-
-> On Windows, wrap the command in `cmd /c` if your client does not resolve `uv` directly.
+> On Windows, if your client does not resolve `linkedin-mcp` (e.g. binding to App Control policy), configure `command` as `python -m linkedin_mcp.server` after a pip/venv install, or the `uv --directory ... python -m` form above for a source install.
 
 **4. Restart your MCP client**, then in the chat:
 
@@ -128,6 +100,28 @@ A Chromium window opens — sign in to LinkedIn there (complete 2FA/captcha if a
 
 ## Installation
 
+Choose one — **A** is the fastest and requires no Git or source checkout.
+
+### Option A — Install from PyPI
+
+```bash
+# installs the linkedin-mcp command + deps (mcp, patchright)
+uv tool install linkedin-mcp-automation
+
+# one-time: download the Chromium browser that drives LinkedIn
+linkedin-mcp --install-browsers
+```
+
+Then register the `linkedin-mcp` command with your MCP client (no path needed):
+
+```json
+{ "mcpServers": { "linkedin": { "command": "linkedin-mcp" } } }
+```
+
+> Prefer a venv over an isolated tool? `uv venv` then `uv pip install linkedin-mcp-automation`, and use `python -m linkedin_mcp.server` (activate the venv for your MCP client) plus `python -m patchright install chromium` to set up the browser.
+
+### Option B — From source (contributors)
+
 ```bash
 git clone https://github.com/developer-tusharchauhan/linkedin-mcp.git
 cd linkedin-mcp
@@ -159,7 +153,28 @@ Before submitting applications, create `~/.linkedin-mcp/answers.json` mapping qu
 
 ## Registering with an MCP client
 
-Use the local (stdio) server. The command below works from any directory:
+**Installed from PyPI (Option A)?** The command is just `linkedin-mcp`:
+
+```json
+{
+  "mcpServers": {
+    "linkedin": { "command": "linkedin-mcp" }
+  }
+}
+```
+
+For opencode:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "linkedin": { "type": "local", "command": ["linkedin-mcp"], "enabled": true }
+  }
+}
+```
+
+**Running from source (Option B)?** Point at the checkout — works from any directory:
 
 ```json
 {
@@ -172,22 +187,7 @@ Use the local (stdio) server. The command below works from any directory:
 }
 ```
 
-For opencode (`opencode.json`):
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "linkedin": {
-      "type": "local",
-      "command": ["uv", "--directory", "/absolute/path/to/linkedin-mcp", "run", "python", "-m", "linkedin_mcp.server"],
-      "enabled": true
-    }
-  }
-}
-```
-
-> **Windows / corporate machines:** some security policies (App Control / AppLocker) block uv's generated `.exe` shims. If you see `Failed to spawn`, use the `python -m` form shown above instead of the `linkedin-mcp` script, and restart your MCP client.
+> **Windows / corporate machines:** some security policies (App Control / AppLocker) block generated `.exe` shims (like `linkedin-mcp`). If you see `Failed to spawn`, switch to the `python -m` form — a venv pip install makes `python -m linkedin_mcp.server` work from any directory — and restart your MCP client.
 
 ## Example usage
 
